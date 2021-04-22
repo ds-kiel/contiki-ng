@@ -34,15 +34,14 @@
  * \file
  *         A MAC protocol that behaves as a transparent layer.
  * \author
- *         Laura Harms <oha@informatik.uni-kiel.de>
+ *         Oliver Harms <oha@informatik.uni-kiel.de>
  */
 
 #include "net/mac/transparentmac/transparentmac.h"
-// #include "net/mac/csma/csma-output.h"
 #include "net/mac/mac-sequence.h"
 #include "net/packetbuf.h"
 #include "net/netstack.h"
-#include "lib/list.h"
+// #include "lib/list.h"
 // #include "lib/memb.h"
 
 /* Log configuration */

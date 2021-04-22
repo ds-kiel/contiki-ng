@@ -34,7 +34,7 @@
  * \file
  *         A MAC protocol that behaves as a transparent layer.
  * \author
- *         Laura Harms <oha@informatik.uni-kiel.de>
+ *         Oliver Harms <oha@informatik.uni-kiel.de>
  */
 
 #ifndef TMAC_H_
