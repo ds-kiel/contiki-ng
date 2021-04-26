@@ -49,6 +49,23 @@
 #define LOG_MODULE "TMAC"
 #define LOG_LEVEL LOG_LEVEL_MAC
 
+/* Constants of the IEEE 802.15.4 standard */
+//TODO: use macros below for exponential backoff
+
+/* macMinBE: Initial backoff exponent. Range 0--TMAC_MAX_BE */
+#ifdef TMAC_CONF_MIN_BE
+#define TMAC_MIN_BE TMAC_CONF_MIN_BE
+#else
+#define TMAC_MIN_BE 3
+#endif
+
+/* macMaxBE: Maximum backoff exponent. Range 3--8 */
+#ifdef TMAC_CONF_MAX_BE
+#define TMAC_MAX_BE CSMA_CONF_MAX_BE
+#else
+#define TMAC_MAX_BE 5
+#endif
+
 
 /*---------------------------------------------------------------------------*/
 static void
@@ -76,7 +93,10 @@ send_packet(mac_callback_t sent, void *ptr)
   packetbuf_set_addr(PACKETBUF_ADDR_SENDER, &linkaddr_node_addr);
   packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK, 1);
 
-  // SECURITY FRAME?
+  /* TODO: Schedule transmission and end send_packet function */
+  
+  /* TODO: execute scheduled transmission in new transmit funtion with code below */
+
   hdr_len = NETSTACK_FRAMER.create();
   if(hdr_len < 0) {
     LOG_ERR("failed to create packet, seqno: %d\n", packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO));
@@ -125,6 +145,7 @@ send_packet(mac_callback_t sent, void *ptr)
               } else {
                 /* Not an ack or ack not for us: collision */
                 ret = MAC_TX_COLLISION;
+                 //TODO: retry sending after backoff period
               }
             }
           }
@@ -132,6 +153,7 @@ send_packet(mac_callback_t sent, void *ptr)
         break;
       case RADIO_TX_COLLISION:
         ret = MAC_TX_COLLISION;
+        //TODO: retry sending after backoff period
         break;
       default:
         ret = MAC_TX_ERR;
