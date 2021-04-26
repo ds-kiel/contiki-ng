@@ -145,7 +145,7 @@ platform_init_stage_two(void)
    * Hardware initialization done!
    */
 
-  random_init(ds2411_id[0]);
+  random_init(node_id);
 
   leds_off(LEDS_BLUE);
 

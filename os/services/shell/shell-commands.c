@@ -64,6 +64,9 @@
 #if MAC_CONF_WITH_CSMA
 #include "net/mac/csma/csma.h"
 #endif
+#if MAC_CONF_WITH_TMAC
+#include "net/mac/transparentmac/transparentmac.h"
+#endif
 #include "net/routing/routing.h"
 #include "net/mac/llsec802154.h"
 

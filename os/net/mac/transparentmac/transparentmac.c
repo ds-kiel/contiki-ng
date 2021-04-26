@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2021, Kiel University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,9 @@
 #include "net/mac/transparentmac/transparentmac.h"
 #include "net/mac/mac-sequence.h"
 #include "net/packetbuf.h"
+#include "lib/random.h"
 #include "net/netstack.h"
-// #include "lib/list.h"
-// #include "lib/memb.h"
+#include <stdio.h>
 
 /* Log configuration */
 #include "sys/log.h"
@@ -50,35 +50,14 @@
 #define LOG_LEVEL LOG_LEVEL_MAC
 
 
-// LIST(neighbor_list);
-
-
-// static void
-// init_sec(void)
-// {
-// #if LLSEC802154_USES_AUX_HEADER
-//   if(packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL) ==
-//      PACKETBUF_ATTR_SECURITY_LEVEL_DEFAULT) {
-//     packetbuf_set_attr(PACKETBUF_ATTR_SECURITY_LEVEL,
-//                        CSMA_LLSEC_SECURITY_LEVEL);
-//   }
-// #endif
-// }
 /*---------------------------------------------------------------------------*/
 static void
 send_packet(mac_callback_t sent, void *ptr)
 {
-
-  // init_sec();
-
-  // csma_output_packet(sent, ptr);
-
-
   static uint8_t initialized = 0;
   static uint8_t seqno;
   int hdr_len;
   int ret;
-  int last_sent_ok = 0;
 
   if(!initialized) {
     initialized = 1;
@@ -119,7 +98,6 @@ send_packet(mac_callback_t sent, void *ptr)
          sending with auto ack. */
       ret = MAC_TX_COLLISION;
     } else {
-
       switch(NETSTACK_RADIO.transmit(packetbuf_totlen())) {
       case RADIO_TX_OK:
         if(is_broadcast) {
@@ -129,7 +107,6 @@ send_packet(mac_callback_t sent, void *ptr)
 
           /* Wait for max TMAC_ACK_WAIT_TIME */
           RTIMER_BUSYWAIT_UNTIL(NETSTACK_RADIO.pending_packet(), TMAC_ACK_WAIT_TIME);
-
           ret = MAC_TX_NOACK;
           if(NETSTACK_RADIO.receiving_packet() ||
              NETSTACK_RADIO.pending_packet() ||
@@ -177,9 +154,7 @@ input_packet(void)
   hdr_len = NETSTACK_FRAMER.parse();
   if(hdr_len < 0) {
     LOG_ERR("failed to parse %u\n", packetbuf_datalen());
-  }
-
-  if(packetbuf_datalen() == TMAC_ACK_LEN && ((uint8_t *)packetbuf_dataptr())[0] == FRAME802154_ACKFRAME) {
+  } else if(packetbuf_datalen() == TMAC_ACK_LEN && ((uint8_t *)packetbuf_dataptr())[0] == FRAME802154_ACKFRAME) {
     /* Ignore ack packets */
     LOG_DBG("ignored ack\n");
   } else if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
@@ -203,6 +178,7 @@ input_packet(void)
     }
 
 #if TMAC_SEND_SOFT_ACK
+    LOG_INFO("time to ack\n");
     if(packetbuf_attr(PACKETBUF_ATTR_MAC_ACK)) {
       ackdata[0] = FRAME802154_ACKFRAME;
       ackdata[1] = 0;
@@ -222,6 +198,7 @@ input_packet(void)
 static int
 on(void)
 {
+  LOG_INFO("radio on!\n");
   return NETSTACK_RADIO.on();
 }
 /*---------------------------------------------------------------------------*/
@@ -242,18 +219,11 @@ init(void)
     return;
   }
 
-// #if LLSEC802154_USES_AUX_HEADER
-// #ifdef CSMA_LLSEC_DEFAULT_KEY0
-//   uint8_t key[16] = CSMA_LLSEC_DEFAULT_KEY0;
-//   csma_security_set_key(0, key);
-// #endif
-// #endif /* LLSEC802154_USES_AUX_HEADER */
+  /* Forced printf as workaround to not call on() too quickly. Without it
+  the radio doesn't start succesfully. Don't use for anything else.
+  Use Logging instead.*/
+  printf("init TMAC ..\n");
 
-  // memb_init(&packet_memb);
-  // memb_init(&metadata_memb);
-  // memb_init(&neighbor_memb);
-
-  // csma_output_init();
   on();
 }
 /*---------------------------------------------------------------------------*/
@@ -263,8 +233,6 @@ max_payload(void)
   int framer_hdrlen;
   radio_value_t max_radio_payload_len;
   radio_result_t res;
-
-  // init_sec();
 
   framer_hdrlen = NETSTACK_FRAMER.length();
 
@@ -283,7 +251,6 @@ max_payload(void)
 
   return MIN(max_radio_payload_len, PACKETBUF_SIZE)
     - framer_hdrlen;
-    // - LLSEC802154_PACKETBUF_MIC_LEN();
 }
 /*---------------------------------------------------------------------------*/
 const struct mac_driver transparentmac_driver = {

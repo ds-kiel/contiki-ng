@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Swedish Institute of Computer Science.
+ * Copyright (c) 2021, Kiel University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,9 +54,9 @@
 
 #ifdef TMAC_CONF_ACK_WAIT_TIME
 #define TMAC_ACK_WAIT_TIME TMAC_CONF_ACK_WAIT_TIME
-#else /* CSMA_CONF_ACK_WAIT_TIME */
+#else /* TMAC_CONF_ACK_WAIT_TIME */
 #define TMAC_ACK_WAIT_TIME                      RTIMER_SECOND / 2500
-#endif /* CSMA_CONF_ACK_WAIT_TIME */
+#endif /* TMAC_CONF_ACK_WAIT_TIME */
 
 #ifdef TMAC_CONF_AFTER_ACK_DETECTED_WAIT_TIME
 #define TMAC_AFTER_ACK_DETECTED_WAIT_TIME TMAC_CONF_AFTER_ACK_DETECTED_WAIT_TIME
@@ -67,17 +67,10 @@
 #define TMAC_ACK_LEN 3
 
 /* just a default - with LLSEC, etc */
-#define TMAC_MAC_MAX_HEADER 21 //TODOLIV
+#define TMAC_MAC_MAX_HEADER 21
 
 
 extern const struct mac_driver transparentmac_driver;
-
-/* CSMA security framer functions */
-// int csma_security_create_frame(void);
-// int csma_security_parse_frame(void);
-
-// /* key management for CSMA */
-// int csma_security_set_key(uint8_t index, const uint8_t *key);
 
 
 #endif /* TMAC_H_ */

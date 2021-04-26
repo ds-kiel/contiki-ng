@@ -80,6 +80,8 @@
 #else /* NETSTACK_CONF_MAC */
 #if MAC_CONF_WITH_NULLMAC
 #define NETSTACK_MAC     nullmac_driver
+#elif MAC_CONF_WITH_TMAC
+#define NETSTACK_MAC     transparentmac_driver
 #elif MAC_CONF_WITH_CSMA
 #define NETSTACK_MAC     csma_driver
 #elif MAC_CONF_WITH_TSCH
