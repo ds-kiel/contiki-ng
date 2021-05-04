@@ -41,9 +41,12 @@
 #include "contiki.h"
 #include "net/netstack.h"
 #include "net/nullnet/nullnet.h"
+#include "sys/node-id.h"
 
+#include "random.h"
 #include <string.h>
 #include <stdio.h> /* For printf() */
+#include <dev/leds.h>
 
 /* Log configuration */
 #include "sys/log.h"
@@ -59,27 +62,40 @@ static linkaddr_t dest_addr =         {{ 0x01, 0x01, 0x01, 0x00, 0x01, 0x74, 0x1
 static linkaddr_t coordinator_addr =  {{ 0x01, 0x01, 0x01, 0x00, 0x01, 0x74, 0x12, 0x00 }};
 #endif /* MAC_CONF_WITH_TSCH */
 
+uint8_t generateRandom(uint8_t min, uint8_t max){
+//    LOG_INFO("Raw random %u from ", random_rand());
+    return (random_rand() % (max - min + 1)) + min;
+}
+
+unsigned int generateTime(){
+    return ((random_rand() % 900)+ 100) / 1000.0 * CLOCK_SECOND;
+}
+
+
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet unicast example");
 AUTOSTART_PROCESSES(&nullnet_example_process);
 
 /*---------------------------------------------------------------------------*/
+
 void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
 {
-  if(len == sizeof(unsigned)) {
-    unsigned count;
-    memcpy(&count, data, sizeof(count));
-    LOG_INFO("Received %u from ", count);
+  if(linkaddr_cmp(dest, &linkaddr_node_addr)) {
+    uint8_t number;
+    memcpy(&number, data, 1);
+    LOG_INFO("Received %u from ", number);
     LOG_INFO_LLADDR(src);
     LOG_INFO_("\n");
+    leds_toggle(LEDS_RED);
   }
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(nullnet_example_process, ev, data)
 {
+//    random_init(node_id);
   static struct etimer periodic_timer;
-  static unsigned count = 0;
+  static uint8_t randomNumber;
 
   PROCESS_BEGIN();
 
@@ -88,22 +104,27 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
 #endif /* MAC_CONF_WITH_TSCH */
 
   /* Initialize NullNet */
-  nullnet_buf = (uint8_t *)&count;
-  nullnet_len = sizeof(count);
+  nullnet_buf = (uint8_t *)&randomNumber;
+  nullnet_len = sizeof(randomNumber);
   nullnet_set_input_callback(input_callback);
 
   if(!linkaddr_cmp(&dest_addr, &linkaddr_node_addr)) {
-    etimer_set(&periodic_timer, SEND_INTERVAL);
-    while(1) {
-      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-      LOG_INFO("Sending %u to ", count);
-      LOG_INFO_LLADDR(&dest_addr);
-      LOG_INFO_("\n");
+    while(1){
+        etimer_set(&periodic_timer, generateTime());
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+        randomNumber = generateRandom(0, 100);
+        LOG_INFO("Sending %u from ", randomNumber);
+        LOG_INFO_LLADDR(&linkaddr_node_addr);
+        LOG_INFO_("\n");
 
-      NETSTACK_NETWORK.output(&dest_addr);
-      count++;
-      etimer_reset(&periodic_timer);
+        NETSTACK_NETWORK.output(&dest_addr);
     }
+  } else {
+      while(1) {
+        etimer_set(&periodic_timer, generateTime());
+
+        PROCESS_WAIT_EVENT_UNTIL (etimer_expired(&periodic_timer));
+        }
   }
 
   PROCESS_END();

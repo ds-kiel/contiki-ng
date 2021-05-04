@@ -40,6 +40,7 @@ COOJA.testlog
 *.cc26x0-cc13x0
 *.z1
 *.zoul
+**/.idea
 
 # do not ignore platform makefiles
 !Makefile.cc2538dk
