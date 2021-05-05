@@ -36,23 +36,29 @@ class PacketLossReader:
         if not dataPoint["address"] in self.id_dict:
             self.id_dict[dataPoint["address"]] = {
                 "lastContent" : -1,
+                "lastMessageTime" : -1,
                 "lastMessageConfirmed" : True,
                 "numLostPackages" : 0,
-                "numSuccessfulPackages" : -1,
-                "id" : dataPoint["id"]
+                "numSuccessfulPackages" : 0,
+                "id" : dataPoint["id"],
+                "totalPropagationDelay" : 0
             }
 
         if not self.id_dict[dataPoint["address"]]["lastMessageConfirmed"]:
             self.id_dict[dataPoint["address"]]["numLostPackages"] += 1
-        else:
-            self.id_dict[dataPoint["address"]]["numSuccessfulPackages"] += 1
+
 
         self.id_dict[dataPoint["address"]]["lastContent"] = dataPoint["content"]
         self.id_dict[dataPoint["address"]]["lastMessageConfirmed"] = False
+        self.id_dict[dataPoint["address"]]["lastMessageTime"] = dataPoint["timestamp"]
+
 
     def confirmDataPoint(self, dataPoint):
         if dataPoint["content"] == self.id_dict[dataPoint["address"]]["lastContent"]:
             self.id_dict[dataPoint["address"]]["lastMessageConfirmed"] = True
+            self.id_dict[dataPoint["address"]]["totalPropagationDelay"] += dataPoint["timestamp"] - self.id_dict[dataPoint["address"]]["lastMessageTime"]
+            self.id_dict[dataPoint["address"]]["numSuccessfulPackages"] += 1
+
 
     def parseFile(self):
         initialMessageTime = None
@@ -81,8 +87,10 @@ class PacketLossReader:
 
         for _, value in self.id_dict.items():
             outputStr += "ID " + value["id"] + ":\n"
-            outputStr += "  # Successful Packages: " + str(value["numSuccessfulPackages"]) + "\n"
-            outputStr += "  # Lost Packages: " + str(value["numLostPackages"]) + "\n"
+            outputStr += "  # Successful Packages:  " + str(value["numSuccessfulPackages"]) + "\n"
+            outputStr += "  # Lost Packages:        " + str(value["numLostPackages"]) + "\n"
+            outputStr += "  Avg. propagation delay: " + str(value["totalPropagationDelay"] / value["numSuccessfulPackages"]) + "ms\n\n\n"
+
 
         return outputStr
 
